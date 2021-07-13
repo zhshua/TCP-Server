@@ -2,6 +2,7 @@ package znet
 
 import (
 	"TCP-Server/ziface"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -33,6 +34,15 @@ func (s *Server) Serve() {
 	}
 }
 
+func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
+	fmt.Println("[Conn Handle] CallBackToClient")
+	if _, err := conn.Write(data[:cnt]); err != nil {
+		fmt.Println("write back buf err ", err)
+		return errors.New("CallBackToClient error")
+	}
+	return nil
+}
+
 // 运行服务器
 func (s *Server) Start() {
 	fmt.Printf("[START] Server listen at ip:%s, port:%d\n", s.IP, s.Port)
@@ -55,7 +65,7 @@ func (s *Server) Start() {
 		fmt.Println("start Zinx server  ", s.Name, " succ, now listenning...")
 
 		// 阻塞等待接受连接
-
+		var cid uint32 = 0
 		for {
 			conn, err := listenner.AcceptTCP()
 			if err != nil {
@@ -63,25 +73,10 @@ func (s *Server) Start() {
 				continue
 			}
 
-			// 启动一个goroutine 分离出读写模块
-			go func() {
-				for {
-					// 读取数据
-					buf := make([]byte, 512)
-					cnt, err := conn.Read(buf)
-					if err != nil {
-						fmt.Println("conn.Read err = ", err)
-						continue
-					}
-					fmt.Printf("recv %d byte data: '%s' from %s\n", cnt, buf[:cnt], conn.RemoteAddr())
+			dealConn := NewConnection(conn, cid, CallBackToClient)
+			cid++
 
-					// 回显
-					if _, err = conn.Write(buf[:cnt]); err != nil {
-						fmt.Println("conn.Write err = ", err)
-						continue
-					}
-				}
-			}()
+			go dealConn.Start()
 
 		}
 	}()
