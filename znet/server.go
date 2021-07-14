@@ -2,7 +2,6 @@ package znet
 
 import (
 	"TCP-Server/ziface"
-	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -17,6 +16,8 @@ type Server struct {
 	IP string
 	// 监听的端口号
 	Port int
+	// 当前的Server添加一个Router, server注册的连接对应的处理业务
+	Router ziface.Irouter
 }
 
 // 运行服务器
@@ -32,15 +33,6 @@ func (s *Server) Serve() {
 	for {
 		time.Sleep(10 * time.Second)
 	}
-}
-
-func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
-	fmt.Println("[Conn Handle] CallBackToClient")
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		fmt.Println("write back buf err ", err)
-		return errors.New("CallBackToClient error")
-	}
-	return nil
 }
 
 // 运行服务器
@@ -73,7 +65,7 @@ func (s *Server) Start() {
 				continue
 			}
 
-			dealConn := NewConnection(conn, cid, CallBackToClient)
+			dealConn := NewConnection(conn, cid, s.Router)
 			cid++
 
 			go dealConn.Start()
@@ -87,6 +79,12 @@ func (s *Server) Stop() {
 	fmt.Println("[STOP] Zinx server , name ", s.Name)
 }
 
+// 路由功能：给当前的服务注册一个路由方法, 供客户端的连接处理使用
+func (s *Server) AddRouter(router ziface.Irouter) {
+	s.Router = router
+	fmt.Println("add router succ!")
+}
+
 // 创建一个服务器句柄
 func NewServer(name string) ziface.IServer {
 	s := &Server{
@@ -94,6 +92,7 @@ func NewServer(name string) ziface.IServer {
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      9190,
+		Router:    nil,
 	}
 	return s
 }
