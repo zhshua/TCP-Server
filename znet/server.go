@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"TCP-Server/utils"
 	"TCP-Server/ziface"
 	"fmt"
 	"net"
@@ -37,6 +38,10 @@ func (s *Server) Serve() {
 
 // 运行服务器
 func (s *Server) Start() {
+	fmt.Printf("[Zinx] Server Name : %s, listenner at IP : %s, Port:%d is starting\n",
+		utils.GlobalObject.Name, utils.GlobalObject.Host, utils.GlobalObject.TcpPort)
+	fmt.Printf("[Zinx] Version %s, MaxConn:%d, MaxPackageSize:%d\n",
+		utils.GlobalObject.Version, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPackageSize)
 	fmt.Printf("[START] Server listen at ip:%s, port:%d\n", s.IP, s.Port)
 
 	// 开启一个goroutine去监听服务端的lister业务
@@ -88,10 +93,10 @@ func (s *Server) AddRouter(router ziface.Irouter) {
 // 创建一个服务器句柄
 func NewServer(name string) ziface.IServer {
 	s := &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      9190,
+		IP:        utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 		Router:    nil,
 	}
 	return s
