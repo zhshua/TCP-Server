@@ -1,0 +1,6 @@
+{
+    "Name":"demoServerApp",
+    "Host":"0.0.0.0",
+    "TcpPort":9190,
+    "MaxConn":3
+}

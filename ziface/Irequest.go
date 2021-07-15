@@ -8,4 +8,7 @@ type Irequest interface {
 
 	// 得到请求的消息数据
 	GetData() []byte
+
+	// 得到请求的消息的Id
+	GetMsgId() uint32
 }
