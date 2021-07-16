@@ -18,6 +18,10 @@ type Connection struct {
 
 	// 告知当前连接已经退出的channel, 连接如果要退出的话,通过管道告知一下
 	ExitChan chan bool
+
+	// 无缓冲管道, 用于读goroutine和写goroutinehi见的消息通信
+	msgChan chan []byte
+
 	// 消息管理模块 MsgId和对应的处理业务API的关系
 	MsgHandle ziface.IMsgHandle
 }
@@ -29,7 +33,8 @@ func NewConnection(conn *net.TCPConn, connID uint32, msgHandle ziface.IMsgHandle
 		ConnID:    connID,
 		isClosed:  false,
 		MsgHandle: msgHandle,
-		ExitChan:  make(chan bool),
+		msgChan:   make(chan []byte),
+		ExitChan:  make(chan bool, 1),
 	}
 	return c
 }
@@ -40,13 +45,6 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		// buf := make([]byte, utils.GlobalObject.MaxPackageSize)
-		// _, err := c.Conn.Read(buf)
-		// if err != nil {
-		// 	fmt.Println("c.Conn.Read err = ", err)
-		// 	continue
-		// }
-
 		// 创建一个拆包解包对象
 		dp := NewDataPack()
 
@@ -93,10 +91,29 @@ func (c *Connection) StartReader() {
 	}
 }
 
+func (c *Connection) StartWriter() {
+	fmt.Println("Reader Groutine is running...")
+	defer fmt.Println("connID = ", c.ConnID, " Writer is exit, remote addr is ", c.RemoteAddr().String())
+
+	for {
+		select {
+		case data := <-c.msgChan:
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("Send data error", err)
+				return
+			}
+		case <-c.ExitChan:
+			// 代表Reader已经退出, Writer也要退出
+			return
+		}
+	}
+}
+
 // 启动连接, 开始当前连接的工作
 func (c *Connection) Start() {
 	fmt.Println("Conn Start... ConnID", c.ConnID)
 	go c.StartReader()
+	go c.StartWriter()
 }
 
 // 停止连接, 结束当前连接的工作
@@ -111,6 +128,12 @@ func (c *Connection) Stop() {
 	c.isClosed = true
 
 	c.Conn.Close()
+
+	// 告知Writer关闭
+	c.ExitChan <- true
+
+	close(c.ExitChan)
+	close(c.msgChan)
 }
 
 // 获取当前连接所绑定的套接字信息
@@ -130,7 +153,7 @@ func (c *Connection) RemoteAddr() net.Addr {
 
 // 发送数据, 将数据先封包, 然后发送给远程的客户端
 func (c *Connection) SendMsg(msgId uint32, data []byte) error {
-	if c.isClosed == true {
+	if c.isClosed {
 		return errors.New("Connection is closed when send msg")
 	}
 
@@ -145,9 +168,6 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 		return errors.New("Pack error msg")
 	}
 
-	if _, err := c.Conn.Write(binaryMsg); err != nil {
-		fmt.Println("Write msg id = ", msgId, "error")
-		return errors.New("conn write msg error")
-	}
+	c.msgChan <- binaryMsg
 	return nil
 }
