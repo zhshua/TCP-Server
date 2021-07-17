@@ -1,0 +1,7 @@
+{
+    "Name":"demoServerAppV0.9",
+    "Host":"0.0.0.0",
+    "TcpPort":9190,
+    "MaxConn":3,
+    "WorkerPoolSize":10
+}
