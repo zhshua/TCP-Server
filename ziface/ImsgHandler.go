@@ -9,4 +9,8 @@ type IMsgHandle interface {
 	DoMsgHandler(Irequest)
 	// 为消息添加具体的处理逻辑
 	AddRouter(uint32, Irouter)
+	// 开启工作池
+	StartWorkPool()
+	// 将消息发送给消息任务队列处理
+	SendMsgToTaskQueue(Irequest)
 }

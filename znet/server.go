@@ -46,6 +46,9 @@ func (s *Server) Start() {
 
 	// 开启一个goroutine去监听服务端的lister业务
 	go func() {
+		// 开启Worker工作池
+		s.MsgHandle.StartWorkPool()
+
 		// 绑定监听地址
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {

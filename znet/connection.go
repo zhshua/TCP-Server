@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"TCP-Server/utils"
 	"TCP-Server/ziface"
 	"errors"
 	"fmt"
@@ -19,7 +20,7 @@ type Connection struct {
 	// 告知当前连接已经退出的channel, 连接如果要退出的话,通过管道告知一下
 	ExitChan chan bool
 
-	// 无缓冲管道, 用于读goroutine和写goroutinehi见的消息通信
+	// 无缓冲管道, 用于读goroutine和写goroutine之间的消息通信
 	msgChan chan []byte
 
 	// 消息管理模块 MsgId和对应的处理业务API的关系
@@ -79,6 +80,7 @@ func (c *Connection) StartReader() {
 				break
 			}
 		}
+		// 读完放在msg.Data中
 		msg.SetMsgData(data)
 
 		// 得到当前conn数据的Request请求数据
@@ -86,8 +88,15 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-		// 从路由中找到注册绑定的Conn对应的Router调用
-		go c.MsgHandle.DoMsgHandler(&req)
+		// 判断是否已经开启工作池, 如果开启了工作池机制, 则将消息发送给Worker工作池处理
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			// 这里不用go, 是因为在SendMsgToTaskQueue里用了go
+			c.MsgHandle.SendMsgToTaskQueue(&req)
+		} else {
+			// 从路由中找到注册绑定的Conn对应的Router调用
+			go c.MsgHandle.DoMsgHandler(&req)
+		}
+
 	}
 }
 
