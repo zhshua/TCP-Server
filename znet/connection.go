@@ -104,7 +104,6 @@ func (c *Connection) StartReader() {
 		}
 		// 判断是否已经开启工作池, 如果开启了工作池机制, 则将消息发送给Worker工作池处理
 		if utils.GlobalObject.WorkerPoolSize > 0 {
-			// 这里不用go, 是因为在SendMsgToTaskQueue里用了go
 			c.MsgHandle.SendMsgToTaskQueue(&req)
 		} else {
 			// 从路由中找到注册绑定的Conn对应的Router调用

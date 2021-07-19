@@ -23,7 +23,7 @@ type Server struct {
 	ConnMgr ziface.IConnManager
 	// 该Server创建连接之后自动调用的Hook函数
 	OnConnStart func(conn ziface.Iconnection)
-	// 该Server销毁连接之后自动调用的Hook函数
+	// 该Server销毁连接之前自动调用的Hook函数
 	OnConnStop func(conn ziface.Iconnection)
 }
 
