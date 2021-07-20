@@ -18,6 +18,9 @@ func OnConnectionAdd(conn ziface.Iconnection) {
 	// 给客户端发送MsgId:200的消息: 同步当前Player的初始位置给客户端
 	player.BroadCastStartPosition()
 
+	// 将当前新上线的玩家添加到在线玩家集合
+	core.WorldMgrObj.AddPlayer(player)
+
 	fmt.Println("---------> Player pid = ", player.Pid, "is online <---------")
 }
 
