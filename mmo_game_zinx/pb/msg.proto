@@ -1,0 +1,4 @@
+syntax = "proto3";               // protobuf协议版本
+package pb;                      // 当前包名
+option csharp_namespace="Pb";    // 给C#提供的选项,客户端是用unity(C#)写的
+option go_package = "./;pb";     // 给go语言提供的选项,不加这句生成.pb.go会报错

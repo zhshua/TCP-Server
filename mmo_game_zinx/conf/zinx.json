@@ -1,0 +1,7 @@
+{
+    "Name":"MMO Game Zinx",
+    "Host":"0.0.0.0",
+    "TcpPort":9190,
+    "MaxConn":3000,
+    "WorkerPoolSize":10
+}
