@@ -33,6 +33,7 @@ func (mh *MsgHandle) DoMsgHandler(request ziface.Irequest) {
 	handler, ok := mh.Apis[request.GetMsgId()]
 	if !ok {
 		fmt.Println("api msgId = ", request.GetMsgId(), "not found!")
+		return
 	}
 
 	// 调度对应Router
