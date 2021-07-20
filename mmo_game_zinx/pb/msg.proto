@@ -2,3 +2,27 @@ syntax = "proto3";               // protobuf协议版本
 package pb;                      // 当前包名
 option csharp_namespace="Pb";    // 给C#提供的选项,客户端是用unity(C#)写的
 option go_package = "./;pb";     // 给go语言提供的选项,不加这句生成.pb.go会报错
+
+// 玩家ID信息
+message SyncPid{
+    int32 Pid = 1;              // 服务器新生成的玩家id
+}
+
+// 玩家位置信息
+message Position{
+    float X = 1;
+    float Y = 2;
+    float Z = 3;
+    float V = 4;
+}
+
+// 广播消息
+message BroadCast{
+    int32 Pid = 1;
+    int32 Tp = 2;   // Tp=1:世界聊天; Tp=2:玩家位置; Tp=3:动作; Tp=4:移动之后的坐标信息
+    oneof Data{
+        string Content = 3;     // 玩家聊天信息
+        Position P = 4;         // 广播玩家位置
+        int32 ActionData = 5;   // 玩家具体动作
+    }
+}
