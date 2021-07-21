@@ -1,6 +1,7 @@
 package main
 
 import (
+	"TCP-Server/mmo_game_zinx/apis"
 	"TCP-Server/mmo_game_zinx/core"
 	"TCP-Server/ziface"
 	"TCP-Server/znet"
@@ -21,6 +22,12 @@ func OnConnectionAdd(conn ziface.Iconnection) {
 	// 将当前新上线的玩家添加到在线玩家集合
 	core.WorldMgrObj.AddPlayer(player)
 
+	// 设置连接额外的属性, 将玩家的id绑定在该连接上
+	conn.SetProperty("pid", player.Pid)
+
+	// 同步自己的位置信息给周围九宫格内的玩家
+	player.SyncSurrounding()
+
 	fmt.Println("---------> Player pid = ", player.Pid, "is online <---------")
 }
 
@@ -32,6 +39,7 @@ func main() {
 	s.SetOnConnStart(OnConnectionAdd)
 
 	// 注册一些路由业务
+	s.AddRouter(2, &apis.WorldChatApi{})
 
 	// 启动服务器
 	s.Serve()

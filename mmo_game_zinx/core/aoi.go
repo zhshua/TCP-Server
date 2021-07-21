@@ -135,7 +135,7 @@ func (m *AOIManager) GetGidByPos(x, y float32) int {
 	return idy*m.CntsX + idx
 }
 
-// 通过横纵坐标得到周边九宫格内全部Players
+// 通过横纵坐标得到周边九宫格内全部PlayersID
 func (m *AOIManager) GetPidsbyPos(x, y float32) (playerIDs []int) {
 	// 通过横纵坐标得到当前玩家所在格子的ID
 	gID := m.GetGidByPos(x, y)
@@ -146,7 +146,7 @@ func (m *AOIManager) GetPidsbyPos(x, y float32) (playerIDs []int) {
 	// 将九宫格里的全部player的id信息加入到playerIDs
 	for _, grid := range gids {
 		playerIDs = append(playerIDs, grid.GetPlayerIDs()...)
-		fmt.Printf("------->grid ID: %d, pids: %v", grid.GID, grid.GetPlayerIDs())
+		fmt.Printf("------->grid ID: %d, pids: %v\n", grid.GID, grid.GetPlayerIDs())
 	}
 	return
 }

@@ -97,3 +97,73 @@ func (p *Player) BroadCastStartPosition() {
 	// 将消息发送给客户端
 	p.SendMsg(200, proto_msg)
 }
+
+func (p *Player) Talk(content string) {
+	// 组建MsgId:200的消息格式
+	proto_msg := &pb.BroadCast{
+		Pid: p.Pid,
+		Tp:  1,
+		Data: &pb.BroadCast_Content{
+			Content: content,
+		},
+	}
+
+	// 得到当前世界在线玩家
+	allOnlinePlayers := WorldMgrObj.GetAllOnlinePlayers()
+
+	// 向所有在线玩家(包括自己)广播发送MsgId:200的消息
+	for _, player := range allOnlinePlayers {
+		player.SendMsg(200, proto_msg)
+	}
+}
+
+// 同步自己的位置信息给周围九宫格内的玩家
+func (p *Player) SyncSurrounding() {
+	// 获取周围九宫格内的所有玩家id
+	pids := WorldMgrObj.AoiMgr.GetPidsbyPos(p.X, p.Z)
+	surPlayers := make([]*Player, 0, len(pids))
+	for _, pid := range pids {
+		surPlayers = append(surPlayers, WorldMgrObj.GetOnlinePlayerByPid(int32(pid)))
+	}
+
+	// 将当前玩家的位置信息通过MsgID:200广播发给周围的玩家
+	// 1. 组装MsgID:200消息
+	proto_msg := &pb.BroadCast{
+		Pid: p.Pid,
+		Tp:  2,
+		Data: &pb.BroadCast_P{
+			P: &pb.Position{
+				X: p.X,
+				Y: p.Y,
+				Z: p.Z,
+				V: p.V,
+			},
+		},
+	}
+	// 2.周围玩家给各自的客户端发送玩家上线的MsgID:200消息(让其他玩家看到自己)
+	for _, player := range surPlayers {
+		player.SendMsg(200, proto_msg)
+	}
+
+	// 将周围玩家的信息发送给当前玩家(让自己看到其他玩家)
+	// 组装MsgID:202消息格式的数据
+	players_proto_msg := make([]*pb.Player, 0, len(surPlayers))
+	for _, player := range surPlayers {
+		p := &pb.Player{
+			Pid: player.Pid,
+			P: &pb.Position{
+				X: player.X,
+				Y: player.Y,
+				Z: player.Z,
+				V: player.V,
+			},
+		}
+		players_proto_msg = append(players_proto_msg, p)
+	}
+	// 同步玩家信息的消息格式202
+	SyncPlayers_proto_msg := &pb.SyncPlayers{
+		Ps: players_proto_msg[:],
+	}
+	// 发送202格式的消息协议
+	p.SendMsg(202, SyncPlayers_proto_msg)
+}

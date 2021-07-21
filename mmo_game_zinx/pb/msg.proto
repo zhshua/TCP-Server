@@ -31,3 +31,12 @@ message BroadCast{
 message Talk{
     string Content = 1;
 }
+
+// 同步周围人的位置信息协议
+message SyncPlayers{
+      repeated Player ps = 1;
+}
+message Player{
+      int32 Pid = 1;
+      Position P = 2;
+}
