@@ -167,3 +167,64 @@ func (p *Player) SyncSurrounding() {
 	// 发送202格式的消息协议
 	p.SendMsg(202, SyncPlayers_proto_msg)
 }
+
+func (p *Player) UpdataPos(x, y, z, v float32) {
+	p.X, p.Y, p.Z, p.V = x, y, z, v
+	// 组装广播消息协议, MsgID:200, Tp=4, 代表广播移动之后的坐标
+	proto_msg := &pb.BroadCast{
+		Pid: p.Pid,
+		Tp:  4,
+		Data: &pb.BroadCast_P{
+			P: &pb.Position{
+				X: p.X,
+				Y: p.Y,
+				Z: p.Z,
+				V: p.V,
+			},
+		},
+	}
+
+	// 获取当前玩家周围九宫格内的玩家
+	SurPlayers := p.GetSuroundingPlayers()
+
+	// 给每个玩家对应的客户端发送位置更新的消息
+	for _, player := range SurPlayers {
+		player.SendMsg(200, proto_msg)
+	}
+}
+
+// 获取当前玩家周围九宫格内的玩家
+func (p *Player) GetSuroundingPlayers() []*Player {
+	// 得到当前AOI九宫格内的所有玩家的PID
+	pids := WorldMgrObj.AoiMgr.GetPidsbyPos(p.X, p.Z)
+
+	// 将所有pid对应的Player放到Players切片中
+	players := make([]*Player, 0, len(pids))
+	for _, pid := range pids {
+		player := WorldMgrObj.GetOnlinePlayerByPid(int32(pid))
+		players = append(players, player)
+	}
+	return players
+}
+
+// 玩家下线业务
+func (p *Player) Offline() {
+	// 得到当前玩家周围的玩家
+	SurPlayers := p.GetSuroundingPlayers()
+
+	// 组装MsgID:201的消息格式
+	proto_msg := &pb.SyncPid{
+		Pid: p.Pid,
+	}
+
+	// 广播给每个玩家
+	for _, player := range SurPlayers {
+		player.SendMsg(201, proto_msg)
+	}
+
+	// 将当前玩家从AOI管理器中删除
+	WorldMgrObj.AoiMgr.RemoveFromGridByPos(int(p.Pid), p.X, p.Z)
+
+	// 将当前玩家从世界管理器中删除
+	WorldMgrObj.RemovePlayer(p.Pid)
+}
